@@ -55,7 +55,15 @@ async function sendOrderConfirmationEmail(order) {
 
 const getOrders = async (req, res) => {
     try {
-        const orders = await Order.find().sort({ createdAt: -1 });
+        const filter = {};
+
+        // phone query param diya ho to sirf usi customer ke orders do
+        // (My Orders feature ke liye) — warna sab orders (admin panel ke liye same rahega)
+        if (req.query.phone) {
+            filter.phone = req.query.phone;
+        }
+
+        const orders = await Order.find(filter).sort({ createdAt: -1 });
         res.status(200).json(orders);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -75,18 +83,23 @@ const getOrderById = async (req, res) => {
 const updateOrderStatus = async (req, res) => {
     try {
         const { status } = req.body;
-        const order = await Order.findByIdAndUpdate(
-            req.params.id,
-            { status },
-            { new: true }
-        );
-        if (!order) return res.status(404).json({ message: "Order not found" });
-        res.status(200).json(order);
+
+        const existingOrder = await Order.findById(req.params.id);
+        if (!existingOrder) return res.status(404).json({ message: "Order not found" });
+
+        // delivered/already-cancelled order ko dobara cancel na hone do
+        if (status === "cancelled" && ["delivered", "cancelled"].includes(existingOrder.status)) {
+            return res.status(400).json({ message: `Order already ${existingOrder.status}, cannot cancel` });
+        }
+
+        existingOrder.status = status;
+        await existingOrder.save();
+
+        res.status(200).json(existingOrder);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
-
 const deleteOrder = async (req, res) => {
     try {
         const order = await Order.findByIdAndDelete(req.params.id);
