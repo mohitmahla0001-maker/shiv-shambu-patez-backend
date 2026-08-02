@@ -1,10 +1,10 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const transporter = require("../config/mailer");
 
 const JWT_SECRET = process.env.JWT_SECRET || "shivshambupatez_secret_key";
 
-// Register
 const registerUser = async (req, res) => {
     try {
         const { name, phone, email, password } = req.body;
@@ -48,10 +48,9 @@ const registerUser = async (req, res) => {
     }
 };
 
-// Login
 const loginUser = async (req, res) => {
     try {
-        const { identifier, password } = req.body; // identifier = email ya phone
+        const { identifier, password } = req.body;
 
         if (!identifier || !password) {
             return res.status(400).json({ message: "Please provide email/phone and password" });
@@ -89,4 +88,39 @@ const loginUser = async (req, res) => {
     }
 };
 
-module.exports = { registerUser, loginUser };
+const forgotPassword = async (req, res) => {
+    try {
+
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ message: "Email is required" });
+        }
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ message: "No account found with this email" });
+        }
+
+        const newPassword = Math.random().toString(36).slice(-8);
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        user.password = hashedPassword;
+        await user.save();
+
+        await transporter.sendMail({
+            from: `"Shiv Shambu PATEZ" <${process.env.EMAIL_USER}>`,
+            to: user.email,
+            subject: "Your New Password - Shiv Shambu PATEZ",
+            text: `Hi ${user.name},\n\nYour password has been reset.\n\nYour new password is: ${newPassword}\n\nPlease login with this password.\n\n- Shiv Shambu PATEZ`,
+        });
+
+        res.status(200).json({ message: "New password sent to your email" });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { registerUser, loginUser, forgotPassword };
