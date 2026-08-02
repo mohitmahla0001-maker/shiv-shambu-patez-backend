@@ -87,8 +87,8 @@ const updateOrderStatus = async (req, res) => {
         const existingOrder = await Order.findById(req.params.id);
         if (!existingOrder) return res.status(404).json({ message: "Order not found" });
 
-        // delivered/already-cancelled order ko dobara cancel na hone do
-        if (status === "cancelled" && ["delivered", "cancelled"].includes(existingOrder.status)) {
+        // delivered/already-cancelled order ko dobara cancel na hone do\\
+    if (status === "cancelled" && ["Delivered", "cancelled"].includes(existingOrder.status)) {
             return res.status(400).json({ message: `Order already ${existingOrder.status}, cannot cancel` });
         }
 
