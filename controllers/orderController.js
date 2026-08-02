@@ -56,19 +56,17 @@ async function sendOrderConfirmationEmail(order) {
 const getOrders = async (req, res) => {
     try {
         const filter = {};
-
-        // phone query param diya ho to sirf usi customer ke orders do
-        // (My Orders feature ke liye) — warna sab orders (admin panel ke liye same rahega)
         if (req.query.phone) {
             filter.phone = req.query.phone;
         }
-
         const orders = await Order.find(filter).sort({ createdAt: -1 });
         res.status(200).json(orders);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
+
+
 
 const getOrderById = async (req, res) => {
     try {
