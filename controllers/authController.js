@@ -1,7 +1,7 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const transporter = require("../config/mailer");
+const sendEmail = require("../config/mailer");
 
 const JWT_SECRET = process.env.JWT_SECRET || "shivshambupatez_secret_key";
 
@@ -13,9 +13,7 @@ const registerUser = async (req, res) => {
             return res.status(400).json({ message: "All fields are required" });
         }
 
-        const existingUser = await User.findOne({
-            $or: [{ email }, { phone }],
-        });
+        const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
 
         if (existingUser) {
             return res.status(400).json({ message: "User already exists with this email or phone" });
@@ -23,24 +21,13 @@ const registerUser = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const user = await User.create({
-            name,
-            phone,
-            email,
-            password: hashedPassword,
-        });
+        const user = await User.create({ name, phone, email, password: hashedPassword });
 
         const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "30d" });
 
         res.status(201).json({
             token,
-            user: {
-                id: user._id,
-                name: user.name,
-                phone: user.phone,
-                email: user.email,
-                address: user.address,
-            },
+            user: { id: user._id, name: user.name, phone: user.phone, email: user.email, address: user.address },
         });
 
     } catch (error) {
@@ -56,9 +43,7 @@ const loginUser = async (req, res) => {
             return res.status(400).json({ message: "Please provide email/phone and password" });
         }
 
-        const user = await User.findOne({
-            $or: [{ email: identifier }, { phone: identifier }],
-        });
+        const user = await User.findOne({ $or: [{ email: identifier }, { phone: identifier }] });
 
         if (!user) {
             return res.status(400).json({ message: "Invalid credentials" });
@@ -74,13 +59,7 @@ const loginUser = async (req, res) => {
 
         res.status(200).json({
             token,
-            user: {
-                id: user._id,
-                name: user.name,
-                phone: user.phone,
-                email: user.email,
-                address: user.address,
-            },
+            user: { id: user._id, name: user.name, phone: user.phone, email: user.email, address: user.address },
         });
 
     } catch (error) {
@@ -109,12 +88,8 @@ const forgotPassword = async (req, res) => {
         user.password = hashedPassword;
         await user.save();
 
-        await transporter.sendMail({
-            from: `"Shiv Shambu PATEZ" <${process.env.EMAIL_USER}>`,
-            to: user.email,
-            subject: "Your New Password - Shiv Shambu PATEZ",
-            text: `Hi ${user.name},\n\nYour password has been reset.\n\nYour new password is: ${newPassword}\n\nPlease login with this password.\n\n- Shiv Shambu PATEZ`,
-        });
+        const text = `Hi ${user.name},\n\nYour password has been reset.\n\nYour new password is: ${newPassword}\n\nPlease login with this password.\n\n- Shiv Shambu PATEZ`;
+        await sendEmail(user.email, "Your New Password - Shiv Shambu PATEZ", text);
 
         res.status(200).json({ message: "New password sent to your email" });
 
