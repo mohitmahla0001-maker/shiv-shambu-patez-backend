@@ -14,11 +14,12 @@ const orderSchema = new mongoose.Schema(
             },
         ],
         totalAmount: { type: Number, required: true },
-       status: {
-    type: String,
-    enum: ["pending", "Preparing", "Ready", "Delivered", "cancelled"],
-    default: "pending",
-},
+        status: {
+            type: String,
+            enum: ["pending", "Preparing", "Ready", "Delivered", "cancelled"],
+            default: "pending",
+        },
+        deliveryOTP: { type: String },
     },
     { timestamps: true }
 );
