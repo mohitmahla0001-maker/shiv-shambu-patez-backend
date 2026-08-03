@@ -98,4 +98,4 @@ const forgotPassword = async (req, res) => {
     }
 };
 
-module.exports = { registerUser, loginUser, forgotPassword };
+module.exports = { registerUser, loginUser, forgotPassword }; 
