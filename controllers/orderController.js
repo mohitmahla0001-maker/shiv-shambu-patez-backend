@@ -1,5 +1,5 @@
 const Order = require("../models/Order");
-const transporter = require("../config/mailer");
+const sendEmail = require("../config/mailer");
 
 const createOrder = async (req, res) => {
     try {
@@ -32,28 +32,12 @@ async function sendOrderConfirmationEmail(order) {
         .join("\n");
 
     if (order.email) {
-        try {
-            await transporter.sendMail({
-                from: `"Shiv Shambu PATEZ" <${process.env.EMAIL_USER}>`,
-                to: order.email,
-                subject: `Order Confirmed - #${shortId}`,
-                text: `Hi ${order.customerName},\n\nYour order has been placed successfully!\n\nOrder ID: #${shortId}\n\nItems:\n${itemsList}\n\nTotal: ₹${order.totalAmount}\n\n🔐 Your Delivery OTP: ${order.deliveryOTP}\n\nPlease share this OTP with the delivery person only when you receive your order.\n\nThank you for ordering with us!\n\n- Shiv Shambu PATEZ`,
-            });
-        } catch (error) {
-            console.error("Customer email failed:", error.message);
-        }
+        const customerText = `Hi ${order.customerName},\n\nYour order has been placed successfully!\n\nOrder ID: #${shortId}\n\nItems:\n${itemsList}\n\nTotal: ₹${order.totalAmount}\n\n🔐 Your Delivery OTP: ${order.deliveryOTP}\n\nPlease share this OTP with the delivery person only when you receive your order.\n\nThank you for ordering with us!\n\n- Shiv Shambu PATEZ`;
+        await sendEmail(order.email, `Order Confirmed - #${shortId}`, customerText);
     }
 
-    try {
-        await transporter.sendMail({
-            from: `"Shiv Shambu PATEZ" <${process.env.EMAIL_USER}>`,
-            to: process.env.EMAIL_USER,
-            subject: `🔔 New Order - #${shortId}`,
-            text: `New order received!\n\nCustomer: ${order.customerName}\nPhone: ${order.phone}\nEmail: ${order.email || "N/A"}\nAddress: ${order.address}\n\nItems:\n${itemsList}\n\nTotal: ₹${order.totalAmount}\n\nDelivery OTP: ${order.deliveryOTP}`,
-        });
-    } catch (error) {
-        console.error("Owner email failed:", error.message);
-    }
+    const ownerText = `New order received!\n\nCustomer: ${order.customerName}\nPhone: ${order.phone}\nEmail: ${order.email || "N/A"}\nAddress: ${order.address}\n\nItems:\n${itemsList}\n\nTotal: ₹${order.totalAmount}\n\nDelivery OTP: ${order.deliveryOTP}`;
+    await sendEmail(process.env.EMAIL_USER, `🔔 New Order - #${shortId}`, ownerText);
 
 }
 
